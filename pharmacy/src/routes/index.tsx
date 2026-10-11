@@ -1,7 +1,7 @@
 import {createFileRoute} from '@tanstack/react-router';
 import {useState} from 'react';
 export const Route=createFileRoute('/')({component:Landing});
-const home='https://amplify-production.d3l733upn467ky.amplifyapp.com';
+const home='https://www.biosciglobal.ca';
 const mail='mailto:nadeem.zia@biosciglobal.net?subject=Ferravitin%20BC%20Pharmacy%20Partnership';
 
 const CAD=(v:number)=>new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(v);
