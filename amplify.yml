@@ -6,7 +6,7 @@ applications:
         preBuild:
           commands:
             - nvm use 22
-            - npm install --global bun@1.3.6
+            - npm install --global bun@1.4.3
             - bun install --frozen-lockfile
         build:
           commands:
@@ -24,7 +24,7 @@ applications:
         preBuild:
           commands:
             - nvm use 22
-            - npm install --global bun@1.3.6
+            - npm install --global bun@1.4.3
             - bun install --frozen-lockfile
         build:
           commands:
