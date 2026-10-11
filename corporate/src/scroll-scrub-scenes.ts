@@ -1,0 +1,3 @@
+import type {ScrollScrubScene,ScrollScrubTheme} from '@/components/scroll-scrub/scroll-scrub';
+export const scrollScrubTheme:ScrollScrubTheme={accent:'#91DED4',background:'#10293D',ink:'#FFFFFF',muted:'#D2E3E5'};
+export const scrollScrubScenes:ScrollScrubScene[]=[{id:'bio-journey',label:'Iron nutrition',kicker:'BIO SCIENCE GLOBAL',title:'Advancing iron nutrition.',body:'Evidence-aware formulation science for healthcare and pharmacy partnerships.',clip:'/assets/world/scene-01.mp4',mobileClip:'/assets/world/scene-01-mobile.mp4',poster:'/assets/world/scene-01-poster.png',mobilePoster:'/assets/world/scene-01-mobile-poster.png',tags:[]}];

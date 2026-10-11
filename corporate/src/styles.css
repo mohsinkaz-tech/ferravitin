@@ -1,0 +1,215 @@
+/* Cascade layer order: reset lowest, then Tailwind/Quanta base, then
+ * components and finally utilities — so Quanta's q-* utilities (e.g.
+ * q-button-*) always win over global element resets. */
+@layer reset, theme, base, components, utilities;
+
+@import "tailwindcss" source(none);
+@source "../src";
+@source "../packages/app-landing/src";
+@source "../packages/quanta/src";
+@import "@higgsfield/quanta/tailwind.css";
+
+/* New in-app Quanta-style components (moved out of the quanta package). Their
+ * CSS uses Tailwind v4 @utility/@source, so it must load through this tailwind
+ * entry. Ordering mirrors quanta's components.css (composer after button;
+ * media-card + generation-card after media). */
+@import "./components/composer/composer.css";
+@import "./components/media-card/media-card.css";
+@import "./components/generation-card/generation-card.css";
+@import "./components/setting-trigger/setting-trigger.css";
+@import "./components/prompt-box/prompt-box.css";
+@import "./components/icon-tile/icon-tile.css";
+
+@import "tw-animate-css";
+/* shadcn v4 base (scrollbar/scroll-fade utilities, toast base) for src/components/ui */
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:where([data-theme="default-dark"], [data-theme="default-dark"] *));
+
+/*
+ * Quanta is the visual source of truth. This file imports Quanta's Tailwind
+ * entry once; that entry brings in primitives, semantic theme variables,
+ * typography, z-index, border-width, and q-* component utilities.
+ *
+ * Generated app layout should use normal Tailwind spacing (`p-4`, `gap-2`,
+ * `mt-6`, `h-10`) and Quanta semantic utilities for color/type
+ * (`bg-q-background-primary`, `text-q-body-md-regular`). Do not use old numeric
+ * token classes such as `px-400` / `gap-200`, and do not reach for raw
+ * q-spacing vars in app code. Quanta component internals own their q-* classes.
+ *
+ * The `--spacing: 0.25rem` restoration keeps native Tailwind layout utilities
+ * stable for generated apps and legacy scaffold components. The inline theme
+ * aliases below keep shadcn-style imports rendering while new UI migrates to
+ * Quanta components.
+ */
+@theme {
+  --spacing: 0.25rem;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-background: var(--hf-color-background-primary);
+  --color-foreground: var(--hf-color-text-primary);
+  --color-card: var(--hf-color-background-secondary);
+  --color-card-foreground: var(--hf-color-text-primary);
+  --color-popover: var(--hf-color-background-secondary);
+  --color-popover-foreground: var(--hf-color-text-primary);
+  --color-primary: var(--hf-color-button-brand);
+  --color-primary-foreground: var(--hf-color-button-label-brand);
+  --color-secondary: var(--hf-color-background-secondary);
+  --color-secondary-foreground: var(--hf-color-text-primary);
+  --color-muted: var(--hf-color-background-tertiary);
+  --color-muted-foreground: var(--hf-color-text-secondary);
+  --color-accent: var(--hf-color-overlay-hover);
+  --color-accent-foreground: var(--hf-color-text-primary);
+  /* shadcn v4 components use text-destructive on tinted fills — needs the
+   * bright brand red, not the dark error surface */
+  --color-destructive: var(--hf-color-button-destructive);
+  --color-destructive-foreground: var(--hf-color-button-label-destructive);
+  --color-border: var(--hf-color-border-default);
+  --color-input: var(--hf-color-border-default);
+  --color-ring: var(--hf-color-border-focus);
+  --color-ring-offset-background: var(--hf-color-background-primary);
+
+  --color-chart-1: var(--hf-color-lime-500);
+  --color-chart-2: var(--hf-color-pink-500);
+  --color-chart-3: var(--hf-color-blue-500);
+  --color-chart-4: var(--hf-color-yellow-500);
+  --color-chart-5: var(--hf-color-purple-500);
+
+  --color-sidebar: var(--hf-color-background-secondary);
+  --color-sidebar-foreground: var(--hf-color-text-primary);
+  --color-sidebar-primary: var(--hf-color-button-brand);
+  --color-sidebar-primary-foreground: var(--hf-color-button-label-brand);
+  --color-sidebar-accent: var(--hf-color-overlay-hover);
+  --color-sidebar-accent-foreground: var(--hf-color-text-primary);
+  --color-sidebar-border: var(--hf-color-border-default);
+  --color-sidebar-ring: var(--hf-color-border-focus);
+
+  --font-grotesk: var(--hf-type-family-grotesk);
+}
+
+/* Fills used by src/components/ui (badge, tabs, marketing-button), mapped to
+ * Quanta's --hf-gradient-* tokens. */
+@utility badge-gradient-blue {
+  background-image: var(--hf-gradient-badge-blue);
+}
+@utility badge-gradient-pink {
+  background-image: var(--hf-gradient-badge-pink);
+}
+@utility badge-gradient-purple {
+  background-image: var(--hf-gradient-badge-purple);
+}
+@utility glass-sheen {
+  background-image: var(--hf-gradient-glass-sheen);
+}
+@utility gloss-lime {
+  background-image:
+    var(--hf-gradient-special-gloss-lime-angled),
+    linear-gradient(90deg, var(--hf-color-lime-500), var(--hf-color-lime-500));
+}
+@utility gloss-pink {
+  background-image:
+    var(--hf-gradient-special-gloss-pink),
+    linear-gradient(90deg, var(--hf-color-pink-500), var(--hf-color-pink-500));
+}
+
+/* Toast skin (Figma node 4085:2671): compact glass pill, kind-colored fills */
+[data-sonner-toast][data-styled="true"] {
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--hf-color-transparent-light-05);
+  border-radius: var(--hf-radius-300, 12px);
+  background: var(--hf-color-glass-dark);
+  backdrop-filter: blur(40px);
+  box-shadow: 0 6px 6px rgb(0 0 0 / 0.25);
+  color: var(--hf-color-text-primary);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+[data-sonner-toast][data-type="success"] {
+  border-color: var(--hf-color-transparent-light-15);
+  background: #68b922; /* toast/success — raw value in Figma, no hf token */
+  backdrop-filter: none;
+}
+[data-sonner-toast].toast-new {
+  border-color: var(--hf-color-transparent-light-15);
+  background: #7a58ff; /* toast/new — raw value in Figma, no hf token */
+  backdrop-filter: none;
+}
+[data-sonner-toast] [data-close-button] {
+  position: static;
+  order: 9;
+  margin-left: 4px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  transform: none;
+}
+[data-sonner-toast] [data-close-button]:hover {
+  background: var(--hf-color-overlay-hover);
+}
+
+:root {
+  --radius: 0.625rem;
+}
+
+@layer base {
+  html {
+    background-color: var(--hf-color-background-primary);
+    color: var(--hf-color-text-primary);
+    color-scheme: dark;
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: var(--hf-color-background-primary);
+    color: var(--hf-color-text-primary);
+    font-family: var(--hf-type-family-secondary);
+  }
+
+  * {
+    border-color: var(--hf-color-border-default);
+  }
+}
+/* BioScience Global standalone website design system. Brand-specific styles. */
+:root{--b-navy:#10293D;--b-teal:#087E89;--b-ink:#162C3B;--b-aqua:#EFF7F6;--b-pink:#D01776;--b-line:#DBE8E8}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,Arial,sans-serif;color:var(--b-ink);background:#fff}h1,h2,h3{font-family:Manrope,Inter,Arial,sans-serif;letter-spacing:-.045em}a{color:inherit;text-decoration:none}.bsg-header{display:flex;align-items:center;justify-content:space-between;gap:28px;background:#fff;min-height:76px;padding:10px max(24px,calc((100vw - 1260px)/2));position:relative;z-index:50;box-shadow:0 2px 18px rgba(9,36,53,.06)}.bsg-wordmark{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.04em;line-height:1.05;color:var(--b-navy);font-weight:500;flex-shrink:0}.bsg-wordmark strong{font-size:12px}.bsg-wordmark img{height:41px;width:41px;object-fit:contain}.bsg-nav{display:flex;align-items:center;gap:25px}.bsg-nav a{font-size:13px;font-weight:600;white-space:nowrap}.bsg-nav a:hover{color:var(--b-teal)}.bsg-nav-cta{padding:13px 17px;background:var(--b-navy);color:white;border-radius:4px;font-size:13px;font-weight:700;white-space:nowrap}.bsg-nav-cta span{margin-left:15px}.mobile-toggle{display:none}.max-wrap{max-width:1210px;margin:auto}.section{padding:100px max(24px,calc((100vw - 1210px)/2))}.section h2,.page-section h2{font-size:clamp(35px,4.5vw,64px);line-height:1.12;margin:0 0 24px}.section p,.page-section p{line-height:1.8;color:#566B76;font-size:17px}.statement{background:#fff;text-align:center}.statement em{color:var(--b-teal);font-style:normal}.statement p{max-width:650px;margin:0 auto 32px}.bsg-button{display:inline-flex;align-items:center;gap:30px;background:var(--b-teal);padding:16px 21px;border-radius:4px;color:white!important;font-weight:700;font-size:14px}.bsg-button:hover{background:var(--b-navy)}.product-section{background:#F5F9F9}.product-layout{display:grid;grid-template-columns: .8fr 1.2fr;gap:60px;align-items:center}.product-intro p{max-width:340px}.text-link{font-size:14px;color:var(--b-teal);font-weight:800;border-bottom:1px solid currentColor;padding-bottom:7px;display:inline-block;margin-top:14px}.product-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}.product-tile{background:white;min-height:370px;border-radius:11px;padding:24px;display:flex;flex-direction:column;align-items:center;box-shadow:0 10px 35px rgba(16,41,61,.05)}.product-tile img{height:230px;max-width:100%;object-fit:contain}.product-tile strong{font-size:15px;text-align:center;color:var(--b-navy)}.tile-top{width:100%;font-size:10px;letter-spacing:.06em;color:var(--b-teal);font-weight:800;display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px}.tile-top span{font-weight:500}.pregnancy .tile-top{color:var(--b-pink)}.fineprint{font-size:11px!important;color:#7A8993!important;padding-top:15px}.science-feature{padding:0;display:grid;grid-template-columns:1fr 1fr}.science-feature-visual{background:var(--b-aqua);display:flex;align-items:center;justify-content:center;padding:55px}.science-feature-visual img{max-width:100%;width:600px}.science-feature-copy{padding:90px 12%;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}.partner-hero{height:550px;position:relative;padding:0!important;overflow:hidden;background:var(--b-navy)}.partner-hero>img{width:100%;height:100%;object-fit:cover;opacity:.78}.partner-overlay{position:absolute;inset:0;padding:80px max(25px,calc((100vw - 1210px)/2));display:flex;flex-direction:column;justify-content:center;background:linear-gradient(90deg,rgba(6,29,41,.88),transparent 83%);color:white}.partner-overlay h2{max-width:560px}.partner-overlay p{color:#E3F1F1;max-width:390px}.cream-cta{background:#fff;color:var(--b-navy);padding:15px 22px;align-self:flex-start;margin-top:18px;font-size:14px;font-weight:700}.evidence-note{background:#F0F7F7}.evidence-note>.max-wrap{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:70px}.evidence-visual img{width:100%;height:350px;object-fit:cover;border-radius:10px}.closing-call{text-align:center;background:var(--b-navy);color:#fff}.closing-call p{color:#C9E0E3;max-width:570px;margin:0 auto 28px}.bsg-footer{background:#081D2B;color:#fff;padding:67px max(24px,calc((100vw - 1210px)/2)) 22px}.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1.5fr;gap:30px}.footer-top div{display:flex;flex-direction:column;gap:13px}.footer-top b{font-size:13px;color:#D7E8EA}.footer-name{font-size:23px;letter-spacing:-.05em;font-weight:800}.footer-top a,.footer-top span,.footer-top p{font-size:13px;color:#BED2D7;line-height:1.5;margin:0}.footer-bottom{border-top:1px solid #284756;display:flex;justify-content:space-between;gap:22px;flex-wrap:wrap;margin-top:60px;padding-top:20px;font-size:11px;color:#92ADB7}.footer-bottom div{display:flex;gap:22px}.page-hero{min-height:410px;background:var(--b-navy);color:white;display:grid;grid-template-columns:1fr 1fr;align-items:center;overflow:hidden}.page-hero-copy{padding:67px max(32px,calc((100vw - 1210px)/2)) 65px 6vw;max-width:800px}.page-hero h1{font-size:clamp(38px,5vw,67px);line-height:1.11;margin:15px 0}.page-hero p:not(.bsg-kicker){max-width:610px;color:#C9E4E6;font-size:16px;line-height:1.7}.page-hero img{width:100%;height:410px;object-fit:cover}.bsg-kicker{color:#85D5D3;letter-spacing:.17em;font-weight:700;font-size:10px}.page-section{padding:78px max(25px,calc((100vw - 1210px)/2))}.page-section>div{max-width:1210px;margin:auto}.page-section.alt{background:var(--b-aqua)}.content-split{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}.content-split img{max-width:100%;width:100%;max-height:440px;object-fit:contain}.content-split .cover-image{object-fit:cover;border-radius:8px}.content-split h2{font-size:clamp(34px,4.4vw,55px)}.small-note{font-size:12px!important;color:#607680!important}.product-details{display:grid;grid-template-columns:1fr 1fr;gap:20px}.detail-card{border:1px solid var(--b-line);padding:35px;border-radius:12px}.detail-card img{height:220px;max-width:100%;display:block;margin:auto}.detail-card h3{font-size:24px}.detail-card p{font-size:14px}.detail-card.daily{border-top:5px solid var(--b-teal)}.detail-card.pregnancy{border-top:5px solid var(--b-pink)}.detail-card ul{padding-left:19px;line-height:1.8;color:#526976}.qna{border-top:1px solid #D6E3E6;padding:20px 0}.qna h3{font-size:19px;margin:0 0 9px}.notice{padding:23px;background:#EAF4F3;border-left:4px solid var(--b-teal);line-height:1.7;font-size:14px}.contact-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:70px}.contact-form{display:grid;grid-template-columns:1fr 1fr;gap:15px}.contact-form label{display:block;font-size:12px;font-weight:700;margin-bottom:7px}.contact-form input,.contact-form select,.contact-form textarea{width:100%;padding:13px;border:1px solid #C8DADB;background:white;border-radius:4px;color:var(--b-ink)}.contact-form .wide{grid-column:1/-1}.contact-form button{border:0;cursor:pointer}.contact-form .check-row{display:flex;align-items:start;gap:9px}.contact-form .check-row input{width:auto;margin-top:5px}.contact-form .check-row label{font-weight:400;font-size:12px}.info-list{margin:0;padding:0;list-style:none}.info-list li{padding:16px 0;border-bottom:1px solid #DAE5E7}.info-list a{color:var(--b-teal)}.home-film{background:var(--b-navy)}@media(max-width:900px){.bsg-nav{gap:12px}.bsg-nav a{font-size:11px}.bsg-nav-cta{display:none}.footer-top{grid-template-columns:1fr 1fr}.product-layout{grid-template-columns:1fr}.science-feature{grid-template-columns:1fr}.science-feature-copy{padding:50px 7%}.evidence-note>.max-wrap{grid-template-columns:1fr;gap:28px}}@media(max-width:680px){.bsg-header{min-height:66px;padding:8px 20px}.mobile-toggle{display:block;border:1px solid #BCCDD2;background:white;padding:9px 12px;border-radius:4px}.bsg-nav{display:none;position:absolute;top:66px;left:0;right:0;background:white;padding:18px 24px;flex-direction:column;align-items:flex-start;box-shadow:0 20px 35px #1232}.bsg-nav.open{display:flex}.bsg-nav a{font-size:15px;padding:4px 0}.section{padding:67px 24px}.product-pair,.product-details,.content-split,.contact-grid{grid-template-columns:1fr}.product-tile{min-height:300px}.product-tile img{height:190px}.product-pair{gap:12px}.page-hero{grid-template-columns:1fr}.page-hero-copy{padding:55px 24px}.page-hero img{height:220px}.page-section{padding:62px 24px}.footer-top{grid-template-columns:1fr 1fr}.footer-top>div:first-child{grid-column:1/-1}.contact-form{grid-template-columns:1fr}.contact-form .wide{grid-column:1}.partner-hero{height:480px}.partner-overlay{padding:35px 24px}.evidence-visual img{height:220px}}
+
+.meletis-profile{display:grid;grid-template-columns:350px 1fr;gap:46px;align-items:start}.meletis-profile img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px}.meletis-profile p{font-size:16px}.meletis-profile li{margin:9px 0;line-height:1.55}.article-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px}.article-card{padding:32px;border:1px solid #d8e7e9;border-radius:12px;background:#fff}.article-card h3{font-size:25px;margin:15px 0;line-height:1.25}.article-card p{font-size:15px}.references li{margin-bottom:15px;line-height:1.65}.references a{color:#087E89;text-decoration:underline}.hidden-trap{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;left:-9999px!important}.bsg-button:disabled{opacity:.5;cursor:wait}@media(max-width:760px){.meletis-profile{grid-template-columns:1fr}.meletis-profile img{max-width:420px}}
+.reference-resources{margin-top:34px;padding:26px;background:#EFF7F6;border-radius:12px}.reference-resources h3{font-size:24px}.reference-resources a{color:#087E89;text-decoration:underline;line-height:1.65}
+
+.product-safety{margin-top:28px;border:1px solid #cee2e5;border-radius:13px;overflow:hidden;background:#f9fcfc}.product-safety>h3{margin:0;background:#10293d;color:#fff;padding:19px 28px;font-size:21px}.product-safety ul{margin:0;padding:20px 30px 23px 55px;line-height:1.7}.product-safety li{padding:5px 0;font-weight:600}.licence-status{padding:22px 28px;background:#dff3ec;color:#146b4f;font-size:20px;border-top:1px solid #c9e4d6}.jurisdiction-note{padding:21px 28px;background:#eaf1f6;border-top:1px solid #d5e3eb;display:grid;gap:12px;color:#10293d}.jurisdiction-note>strong{font-size:18px}.licence-links{display:flex;align-items:center;flex-wrap:wrap;gap:12px;font-weight:700;color:#087e89}.licence-links a{text-decoration:underline;text-underline-offset:3px}.science-reference{background:#eaf5f3;border-left:4px solid #087e89;padding:15px 18px;border-radius:0 7px 7px 0;color:#2c5162!important;font-size:14px!important;line-height:1.8!important}
+.paper-header{background:linear-gradient(120deg,#10293d,#155461);color:#fff;padding:65px max(24px,calc((100vw - 1080px)/2)) 76px}.paper-header-inner{max-width:1080px;margin:auto}.paper-back{display:inline-block;color:#b3e8e1;font-size:13px;margin-bottom:48px}.paper-overline,.paper-section-tag{color:#81ddd3;letter-spacing:.16em;font-weight:800;font-size:11px}.paper-header h1{font-size:clamp(39px,5.7vw,74px);max-width:900px;line-height:1.08;margin:19px 0;letter-spacing:-.052em}.paper-deck{max-width:780px;color:#d4e9e9;font-size:19px;line-height:1.65}.paper-author{display:flex;align-items:center;gap:14px;margin-top:30px}.paper-author img{width:56px;height:56px;border-radius:50%;object-fit:cover}.paper-author div{display:grid;gap:6px}.paper-author span{color:#c4e3e4;font-size:12px}.paper-body{max-width:1160px;margin:auto;padding:73px 26px 110px;display:grid;grid-template-columns:205px minmax(0,1fr);gap:80px}.paper-sidebar{position:sticky;top:25px;align-self:start;display:flex;flex-direction:column;gap:16px;padding-left:22px;border-left:1px solid #d4e4e5}.paper-sidebar p{font-size:11px;font-weight:800;color:#087e89;letter-spacing:.1em;margin:0 0 5px}.paper-sidebar a{font-size:14px;color:#526979}.paper-main{max-width:790px}.paper-intro{background:#eaf6f4;border-left:4px solid #087e89;padding:22px 28px;border-radius:0 10px 10px 0}.paper-main section{padding-top:58px;scroll-margin-top:25px}.paper-main h2{font-size:clamp(30px,3.5vw,44px);line-height:1.18;margin:15px 0 21px;letter-spacing:-.04em}.paper-main p{font-size:17px;line-height:1.85;color:#4a6270}.paper-main .paper-section-tag{font-size:11px;color:#087e89;line-height:1.5}.paper-figure{margin:30px 0;background:#f1f7f7;padding:24px;border-radius:12px}.paper-figure img{max-width:100%;width:100%;max-height:420px;object-fit:contain}.paper-figure figcaption{color:#627580;font-size:12px;line-height:1.65;padding-top:14px}.paper-key-point{padding:28px 31px;background:#10293d;border-radius:12px;color:#fff;margin-top:27px}.paper-key-point strong{color:#92ddd4;font-size:18px}.paper-key-point p{color:#e2edf0;margin-bottom:0}.paper-references{padding-left:25px;line-height:1.85;color:#526778}.paper-references li{margin-bottom:18px}.paper-references a{color:#087e89;text-decoration:underline}.paper-endnote{background:#edf7f6;padding:25px 28px;border-radius:10px;margin-top:55px}.paper-endnote p{font-size:14px;margin-bottom:0}@media(max-width:750px){.paper-body{grid-template-columns:1fr;gap:28px;padding:46px 23px 80px}.paper-sidebar{position:static;flex-direction:row;flex-wrap:wrap;gap:12px;border-left:0;border-bottom:1px solid #d4e4e5;padding:0 0 18px}.paper-header{padding:48px 24px 60px}.paper-back{margin-bottom:32px}.paper-deck{font-size:16px}.licence-status{font-size:17px}}
+/* Ferravitin readability and hierarchy revision */
+.product-overview{gap:28px;align-items:stretch}.product-overview .detail-card{display:flex;flex-direction:column;padding:30px 30px 34px;border-radius:15px;background:#fff;box-shadow:0 8px 29px rgba(16,41,61,.045)}.product-overview .detail-card>img{height:210px;margin:0 auto 17px}.product-card-body{display:flex;flex-direction:column;flex:1}.product-category{font-weight:800!important;letter-spacing:.13em;font-size:11px!important;color:#087e89!important;margin:0!important}.pregnancy-category{color:#d01776!important}.product-overview .detail-card h3{font-size:30px;letter-spacing:-.035em;line-height:1.19;margin:10px 0 18px}.product-meta{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;border-bottom:1px solid #dce7e8;padding:0 0 20px;margin-bottom:24px}.product-meta strong{font-size:15px;color:#10293d}.product-meta span{padding-left:12px;border-left:1px solid #bbd0d3;color:#4d6979;font-size:13px;white-space:nowrap}.product-card-body h4{font-weight:800;color:#465f6e;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 14px}.product-benefits{list-style:none;padding:0!important;margin:0 0 22px!important;display:grid;gap:12px}.product-benefits li{padding-left:26px!important;position:relative;font-size:15px;line-height:1.55;color:#314b5a}.product-benefits li:before{content:'✓';position:absolute;left:0;color:#087e89;font-weight:900}.product-dosage{font-size:13px!important;line-height:1.55!important;color:#486374!important;background:#eef7f6;padding:15px 17px;margin:auto 0 0!important;border-radius:8px}.product-safety{margin-top:40px;border-radius:15px;overflow:hidden;border:1px solid #d2e2e6;background:white}.product-safety-heading{padding:28px 31px;background:#10293d;color:#fff}.product-safety-heading p{font-weight:800;font-size:11px;letter-spacing:.14em;color:#9eddd7;margin:0 0 7px}.product-safety-heading h3{font-size:25px;margin:0 0 8px;letter-spacing:-.02em}.product-safety-heading span{font-size:14px;color:#d4e4e7}.precautions-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;padding:29px!important;list-style:none;margin:0!important}.precautions-list li{padding:0 0 0 17px!important;border-left:3px solid #087e89;display:flex;flex-direction:column;gap:9px}.precautions-list strong{font-size:15px;color:#10293d}.precautions-list span{color:#496170;line-height:1.65;font-size:13px}.product-regulatory{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #d9e7e9}.product-regulatory .licence-status,.product-regulatory .jurisdiction-note{padding:23px 28px;display:flex;flex-direction:column;justify-content:center;gap:10px;border:0}.product-regulatory .jurisdiction-note{border-left:1px solid #d5e3e8}.product-regulatory small{font-size:10px;letter-spacing:.11em;font-weight:900;opacity:.75}.product-regulatory strong{font-size:17px;line-height:1.45}.product-regulatory .licence-links{font-size:13px;line-height:1.5}.meletis-profile{grid-template-columns:minmax(240px,350px) minmax(0,1fr);gap:clamp(28px,5vw,72px);max-width:1160px}.meletis-photo{position:sticky;top:28px}.meletis-photo img{width:100%;max-height:480px;object-fit:cover;object-position:center 25%;display:block;border-radius:14px}.meletis-content{max-width:690px}.meletis-content h3{font-size:24px;letter-spacing:-.025em;color:#10293d;margin:0 0 18px}.meletis-content p{font-size:16px;line-height:1.8;margin:0 0 19px}.achievements-heading{padding-top:29px;border-top:1px solid #d3e2e5;margin-top:30px!important}.achievements-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px 21px;margin:0 0 25px!important;padding:0!important;list-style:none}.achievements-grid li{margin:0!important;background:#fff;padding:14px 15px!important;border-left:3px solid #087e89;border-radius:0 8px 8px 0;font-size:14px;line-height:1.55}.profile-research-note{padding-top:22px;border-top:1px solid #d3e2e5;margin-top:27px!important}@media(max-width:800px){.precautions-list{grid-template-columns:1fr}.product-regulatory{grid-template-columns:1fr}.product-regulatory .jurisdiction-note{border-left:0;border-top:1px solid #d5e3e8}.meletis-profile{grid-template-columns:1fr}.meletis-photo{position:static;max-width:350px}.achievements-grid{grid-template-columns:1fr}}@media(max-width:680px){.product-overview .detail-card{padding:22px}.product-overview .detail-card>img{height:195px}.product-safety-heading{padding:23px}.precautions-list{padding:24px!important}}
+.product-regulatory .regulatory-description{font-size:13px!important;line-height:1.6!important;margin:0!important;color:inherit}.product-regulatory .licence-status .licence-links{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:6px}.product-regulatory .licence-status .licence-links a{font-size:13px;font-weight:700}.product-regulatory .jurisdiction-note strong{color:#10293d}
+
+.appointment-ticker{display:flex;align-items:center;gap:18px;padding:9px 4.8%;background:#176b69;color:white;font-size:12px;line-height:1.5;overflow:hidden}.appointment-ticker .ticker-label{font-weight:800;letter-spacing:.1em;white-space:nowrap}.ticker-window{flex:1;overflow:hidden;white-space:nowrap}.ticker-move{display:inline-block;animation:bsg-ticker 24s linear infinite;min-width:max-content}.appointment-ticker>a{color:white;font-weight:700;white-space:nowrap;text-decoration:underline;text-underline-offset:3px}@keyframes bsg-ticker{from{transform:translateX(90%)}to{transform:translateX(-100%)}}@media(prefers-reduced-motion:reduce){.ticker-move{animation:none;white-space:normal}}@media(max-width:680px){.appointment-ticker{gap:8px}.ticker-label{display:none}.appointment-ticker>a{font-size:11px}}.appointment-profile{max-width:880px;margin:auto}.appointment-profile h2{font-size:clamp(36px,5vw,64px);letter-spacing:-.04em}.appointment-profile p{max-width:760px;line-height:1.85}.announcement-actions{display:flex;gap:25px;align-items:center;flex-wrap:wrap;margin-top:30px}.announcement-actions>a:not(.bsg-button){color:#126e71;font-weight:700}
+
+/* Nadeem appointment editorial layout */
+.appointment-layout{display:grid;grid-template-columns:minmax(230px,340px) minmax(0,1fr);gap:clamp(28px,5vw,75px);max-width:1150px;margin:auto;align-items:start}.appointment-portrait{margin:0;position:sticky;top:25px}.appointment-portrait img{width:100%;aspect-ratio:4/4.2;object-fit:cover;object-position:center 33%;border-radius:14px;display:block;background:#eaf2f2}.appointment-portrait figcaption{color:#147d7e;font-size:11px;letter-spacing:.12em;margin-top:12px;font-weight:800}.appointment-profile{margin:0!important;max-width:740px}.appointment-profile h2{font-size:clamp(36px,5vw,64px);line-height:1.1;margin:12px 0 24px}.appointment-profile h3{font-size:20px;margin:32px 0 12px}.appointment-profile>p{font-size:16px;line-height:1.85;color:#49616d}.appointment-credential{font-size:17px!important;font-weight:750!important;color:#0f3347!important}.appointment-list{display:grid;gap:10px;padding-left:24px;color:#425c69;line-height:1.7}.appointment-business-note{padding:19px 22px;background:#e9f5f3;border-left:4px solid #118384;border-radius:0 10px 10px 0;margin-top:25px}.announcement-actions{margin-top:28px!important}.announcement-next{display:grid;grid-template-columns:1.3fr .7fr;gap:35px;align-items:center;max-width:1110px;margin:auto}.announcement-next>div:first-child{max-width:720px}.announcement-next p{line-height:1.7}.announcement-product-strip{display:flex;gap:8px;justify-content:center;align-items:end}.announcement-product-strip img{width:46%;max-height:270px;object-fit:contain}@media(max-width:780px){.appointment-layout,.announcement-next{grid-template-columns:1fr}.appointment-portrait{position:static;max-width:320px}.announcement-product-strip{justify-content:start}.announcement-product-strip img{width:auto;max-width:42%;max-height:210px}}
+
+/* Publication polish — partner announcement */
+.page-hero:has(+ .page-section .appointment-layout) img{object-fit:cover;object-position:center 42%;filter:saturate(.8) contrast(.96)}
+.appointment-layout{grid-template-columns:minmax(180px,260px) minmax(0,1fr);gap:clamp(24px,5vw,65px);padding-top:12px}
+.appointment-portrait img{aspect-ratio:1/1;object-fit:cover;max-width:260px;box-shadow:0 16px 36px rgba(6,44,54,.10)}
+.appointment-profile h2{font-size:clamp(38px,4.3vw,58px);margin:10px 0 17px}
+.appointment-credential{padding-bottom:22px;border-bottom:1px solid #d8e7e9}
+.appointment-profile h3{color:#10293d}
+.appointment-list{list-style:none;padding:0;max-width:730px}
+.appointment-list li{position:relative;background:#f2f8f7;border-radius:8px;padding:15px 20px 15px 44px}
+.appointment-list li:before{content:'✓';position:absolute;left:17px;color:#087e89;font-weight:900}
+.announcement-business-note{line-height:1.75!important}
+.announcement-product-strip{padding:30px 15px 10px;border-radius:17px;background:linear-gradient(145deg,#e7f4f1,#fff)}
+.announcement-product-strip img{max-height:310px}
+@media(max-width:760px){.appointment-layout{grid-template-columns:1fr}.appointment-portrait img{max-width:220px}.announcement-product-strip img{max-height:230px}}

@@ -1,0 +1,10 @@
+# Google Sheets + blog publishing configuration
+1. Create a Google Sheet (owned by an approved BioScience Global account). Open Extensions > Apps Script and paste Code.gs. Run setupSheets() once with authorization.
+2. In Apps Script Project Settings > Script Properties set WEBHOOK_SHARED_SECRET to a long random secret, and NOTIFY_EMAIL to mohsin.kazi@biosciglobal.net.
+3. Deploy > New Deployment > Web app > Execute as Me > Who has access: Anyone. This publishes the /exec URL for receiving leads and public approved blog entries. Apps Script Web Apps need public ingress for website requests; the shared secret restricts lead writes, but implement Cloudflare Turnstile/rate limits before production.
+4. In your Higgsfield website settings -> Secrets add GOOGLE_SHEETS_WEBHOOK_URL = Apps Script /exec deployment URL, GOOGLE_BLOG_FEED_URL = same /exec URL, GOOGLE_SHEETS_SHARED_SECRET = exactly the Script Property.
+5. Redeploy the site after adding secrets. Verify with a test enquiry and confirm sheet row + notification email. No keys should be entered in chat or committed in source code.
+6. Articles tab: add id, title, summary, https URL for hosted approved post, date, status, scientificApproved, regulatoryApproved. Only entries with status exactly Published and boolean TRUE for both approvals are delivered by doGet. The featured Meletis article is maintained as a site source page; Google Sheets can link to it.
+7. To automate editorial publication, use Apps Script time-driven trigger to check Articles every hour and publish only rows already approved by humans. Never automatically move Draft -> Published based solely on generation or an AI review. The site fetches fresh approved summaries every 3 minutes from /api/blog.
+8. Ensure privacy notice and retention/access policy meet applicable laws; avoid patient health information. Consider a dedicated email delivery vendor and captcha/rate limiting for high volume.
+Note: URL deployment and Google account permissions must be completed by the owner; a website ZIP alone cannot create those external permissions.

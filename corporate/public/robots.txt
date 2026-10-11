@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://bioscience-global-ferravitin.higgsfield.app/sitemap.xml
