@@ -1,0 +1,66 @@
+name: Import verified Higgsfield website sources
+on:
+  push:
+    branches: [amplify-production]
+    paths:
+      - '.github/workflows/import-websites.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: import-websites-amplify-production
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          ref: amplify-production
+          persist-credentials: true
+      - name: Download and verify source packages
+        env:
+          CORPORATE_URL: https://d2ol7oe51mr4n9.cloudfront.net/user_395iUmxzDnuWzTluDJ9JWmQlWD2/13a49cd0-19a4-420e-8d0f-2c7fc3460ce7.zip
+          PHARMACY_URL: https://d2ol7oe51mr4n9.cloudfront.net/user_395iUmxzDnuWzTluDJ9JWmQlWD2/67c27c90-d7c2-442a-a447-34f9421e5cf1.zip
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --silent --show-error "$CORPORATE_URL" -o /tmp/corporate.zip
+          curl --fail --location --retry 3 --silent --show-error "$PHARMACY_URL" -o /tmp/pharmacy.zip
+          echo '7a3e4a91ed1ebf823537b329327e838e89cda188830e2c12dbe2e18cb3965f64  /tmp/corporate.zip' | sha256sum -c -
+          echo '720c4a03116bf4eacf90530a37b8045d4128920008699171a92a45e602e77d9e  /tmp/pharmacy.zip' | sha256sum -c -
+      - name: Import complete sanitized website sources
+        run: |
+          set -euo pipefail
+          mkdir -p corporate pharmacy
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          for name in ('corporate', 'pharmacy'):
+              root = Path(name).resolve()
+              with zipfile.ZipFile('/tmp/' + name + '.zip') as z:
+                  for entry in z.infolist():
+                      path = (root / entry.filename).resolve()
+                      if not path.is_relative_to(root):
+                          raise ValueError('Unexpected path inside source archive')
+                      if entry.is_dir():
+                          continue
+                      if any(x in {'node_modules', '.git', '.env', 'source-review'} for x in path.relative_to(root).parts):
+                          raise ValueError('Restricted content in website archive')
+                      path.parent.mkdir(parents=True, exist_ok=True)
+                      with z.open(entry) as source, open(path,'wb') as dest:
+                          import shutil
+                          shutil.copyfileobj(source,dest)
+          PY
+      - name: Commit verified source folders to release branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add corporate pharmacy
+          if git diff --cached --quiet; then
+            echo "Source already current"
+            exit 0
+          fi
+          git commit -m "Import verified Amplify-ready BioScience Global website sources"
+          git push origin HEAD:amplify-production
