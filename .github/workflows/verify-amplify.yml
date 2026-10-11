@@ -1,0 +1,41 @@
+name: Validate both AWS Amplify website builds
+on:
+  push:
+    branches: [amplify-production]
+    paths:
+      - 'corporate/**'
+      - 'pharmacy/**'
+      - 'amplify.yml'
+      - '.github/workflows/verify-amplify.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        site: [corporate, pharmacy]
+    defaults:
+      run:
+        working-directory: ${{ matrix.site }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Validate TypeScript and build Amplify SSR bundle
+        run: bun run build
+      - name: Inspect Amplify compute manifest
+        run: |
+          test -f .amplify-hosting/deploy-manifest.json
+          node -e "const x=require('./.amplify-hosting/deploy-manifest.json');if(!x.computeResources?.length || !x.routes?.length)process.exit(1);console.log('Amplify SSR compute valid',x.computeResources)"
