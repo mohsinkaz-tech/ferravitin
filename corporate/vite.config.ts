@@ -9,6 +9,7 @@ import svgr from "vite-plugin-svgr";
 const iconsShim = fileURLToPath(new URL("./src/lib/quanta-icons.ts", import.meta.url));
 
 export default defineConfig({
+  define: { __HF_DESIGN_INSPECTOR__: false },
   resolve: {
     alias: [{find: /^@higgsfield-ai\/icons(\/.*)?$/, replacement: iconsShim}],
   },
