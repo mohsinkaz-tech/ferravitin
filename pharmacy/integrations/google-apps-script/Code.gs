@@ -49,19 +49,7 @@ function doPost(e){
     'Delivery: '+p.address+', '+p.city,
     'Daily Maintenance: '+dm+' bottles (MSRP CAD $59.99 reference)',
     'Pregnancy Formula: '+preg+' bottles (MSRP CAD $69.99 reference)',
-    'MSRP reference only (before tax; not pharmacy invoice): CAD ,
-    'Notes: '+(p.notes||'—'),
-    'Commercial terms provided individually; no public wholesale prices',
-    'Contact pharmacy privately for complete purchase-order terms. This is nonbinding interest, not a signed agreement.'
-  ].join('\n');
-  MailApp.sendEmail({to:'nadeemzialeads@biosciglobal.net',subject:'Ferravitin™ pharmacy order request — '+p.reference,body:txt,name:'BioScience Global Pharmacy Leads'});
-  return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
- }catch(err){
-  console.error('Order webhook error: '+err);
-  return ContentService.createTextOutput(JSON.stringify({ok:false})).setMimeType(ContentService.MimeType.JSON);
- }
-}
-+(dm*59.99+preg*69.99).toFixed(2),
+    'MSRP reference only (before tax; not pharmacy invoice): CAD $'+(dm*59.99+preg*69.99).toFixed(2),
     'Notes: '+(p.notes||'—'),
     'Commercial terms provided individually; no public wholesale prices',
     'Contact pharmacy privately for complete purchase-order terms. This is nonbinding interest, not a signed agreement.'
