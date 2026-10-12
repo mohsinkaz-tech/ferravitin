@@ -9,7 +9,7 @@ Do NOT put secrets in the web page, client JavaScript, or repository.
 const HEADERS = [
  'Received at (UTC)','Reference','Lead type','Pharmacy','Contact',
  'Email','Phone','Delivery address','BC city','GST or licence',
- 'Daily bottles','Pregnancy bottles','Indicative CAD before tax',
+ 'Daily bottles','Pregnancy bottles','MSRP reference CAD before tax',
  'Additional notes','Privacy consent','Nonbinding acknowledgement',
  'Purchase order template','Origin'
 ];
@@ -35,24 +35,36 @@ function doPost(e){
    let sh=doc.getSheetByName('Pharmacy Order Leads');
    if(!sh)sh=doc.insertSheet('Pharmacy Order Leads');
    if(sh.getLastRow()===0)sh.appendRow(HEADERS);
-   const values=[p.receivedAt,p.reference,p.type,p.pharmacy,p.manager,p.email,p.phone,p.address,p.city,p.gst,dm,preg,Number((dm*50.99+preg*59.49).toFixed(2)),p.notes,'yes','yes',p.poTemplate,p.origin].map(safe);
+   const values=[p.receivedAt,p.reference,p.type,p.pharmacy,p.manager,p.email,p.phone,p.address,p.city,p.gst,dm,preg,Number((dm*59.99+preg*69.99).toFixed(2)),p.notes,'yes','yes',p.poTemplate,p.origin].map(safe);
    sh.appendRow(values);
    SpreadsheetApp.flush();
   }finally{lock.releaseLock();}
   const txt=[
-    'New Ferravitin™ BC pharmacy order request',
+    'New Ferravitin™ BC pharmacy pre-order interest',
     'Reference: '+p.reference,
     'Pharmacy: '+p.pharmacy,
     'Contact: '+p.manager,
     'Email: '+p.email,
     'Phone: '+p.phone,
     'Delivery: '+p.address+', '+p.city,
-    'Daily Maintenance: '+dm+' bottles @ CAD $50.99',
-    'Pregnancy Formula: '+preg+' bottles @ CAD $59.49',
-    'Indicative total (before tax): CAD $'+(dm*50.99+preg*59.49).toFixed(2),
+    'Daily Maintenance: '+dm+' bottles (MSRP CAD $59.99 reference)',
+    'Pregnancy Formula: '+preg+' bottles (MSRP CAD $69.99 reference)',
+    'MSRP reference only (before tax; not pharmacy invoice): CAD ,
     'Notes: '+(p.notes||'—'),
-    'Purchase order reference: BSG-PO-T001 v1.3',
-    'Please send the current complete PO for signature. This online request is not a signed contract.'
+    'Commercial terms provided individually; no public wholesale prices',
+    'Contact pharmacy privately for complete purchase-order terms. This is nonbinding interest, not a signed agreement.'
+  ].join('\n');
+  MailApp.sendEmail({to:'nadeemzialeads@biosciglobal.net',subject:'Ferravitin™ pharmacy order request — '+p.reference,body:txt,name:'BioScience Global Pharmacy Leads'});
+  return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+ }catch(err){
+  console.error('Order webhook error: '+err);
+  return ContentService.createTextOutput(JSON.stringify({ok:false})).setMimeType(ContentService.MimeType.JSON);
+ }
+}
++(dm*59.99+preg*69.99).toFixed(2),
+    'Notes: '+(p.notes||'—'),
+    'Commercial terms provided individually; no public wholesale prices',
+    'Contact pharmacy privately for complete purchase-order terms. This is nonbinding interest, not a signed agreement.'
   ].join('\n');
   MailApp.sendEmail({to:'nadeemzialeads@biosciglobal.net',subject:'Ferravitin™ pharmacy order request — '+p.reference,body:txt,name:'BioScience Global Pharmacy Leads'});
   return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
