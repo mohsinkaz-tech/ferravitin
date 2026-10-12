@@ -1,4 +1,6 @@
 # BioScience Global / Ferravitin™ website — management handoff
+
+Production contact update (2026-10-12): the main site runs on AWS Amplify at https://www.biosciglobal.ca. Follow [corporate contact activation](../integrations/google/CORPORATE_CONTACT_SETUP.md) for the separate Google Sheet, owner Apps Script steps, dedicated runtime secret and acceptance checklist. Current production source is GitHub `mohsinkaz-tech/ferravitin`, branch `amplify-production`, folder `corporate/`. The Higgsfield source origin below is historical. Keep Amplify-specific contact changes in GitHub and preserve the separate `pharmacy/` flow.
 Site: https://bioscience-global-ferravitin.higgsfield.app
 Higgsfield website ID: 88349e69-978e-49f6-9c04-66a6cb71823a
 ## How to manage using ChatGPT

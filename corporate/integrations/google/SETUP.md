@@ -1,4 +1,6 @@
 # Google Sheets + blog publishing configuration
+
+**Corporate contact form:** use [CORPORATE_CONTACT_SETUP.md](./CORPORATE_CONTACT_SETUP.md) and the separate `CorporateContact.gs` project. The instructions below describe the legacy Articles/lead bridge; do not use them for the production corporate contact form, which now uses a dedicated AWS runtime secret and separate corporate Sheet. BC pharmacy orders use a different integration.
 1. Create a Google Sheet (owned by an approved BioScience Global account). Open Extensions > Apps Script and paste Code.gs. Run setupSheets() once with authorization.
 2. In Apps Script Project Settings > Script Properties set WEBHOOK_SHARED_SECRET to a long random secret, and NOTIFY_EMAIL to mohsin.kazi@biosciglobal.net.
 3. Deploy > New Deployment > Web app > Execute as Me > Who has access: Anyone. This publishes the /exec URL for receiving leads and public approved blog entries. Apps Script Web Apps need public ingress for website requests; the shared secret restricts lead writes, but implement Cloudflare Turnstile/rate limits before production.

@@ -36,6 +36,9 @@ jobs:
       - name: Verify pharmacy lead access and intake workflow
         if: matrix.site == 'pharmacy'
         run: bun test tests/leads.test.ts
+      - name: Verify corporate contact delivery and Google bridge
+        if: matrix.site == 'corporate'
+        run: bun test tests/contact.test.ts
       - name: Validate TypeScript and build Amplify SSR bundle
         run: bun run build
       - name: Inspect Amplify compute manifest

@@ -213,3 +213,4 @@
 .announcement-product-strip{padding:30px 15px 10px;border-radius:17px;background:linear-gradient(145deg,#e7f4f1,#fff)}
 .announcement-product-strip img{max-height:310px}
 @media(max-width:760px){.appointment-layout{grid-template-columns:1fr}.appointment-portrait img{max-width:220px}.announcement-product-strip img{max-height:230px}}
+.contact-feedback{margin-top:1.5rem;padding:1.25rem;border:2px solid currentColor;border-radius:.5rem}.contact-feedback h3{margin-top:0}.contact-feedback:focus{outline:2px solid currentColor;outline-offset:4px}
