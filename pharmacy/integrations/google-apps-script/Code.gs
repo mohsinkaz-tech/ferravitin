@@ -54,7 +54,7 @@ function doPost(e){
     'Commercial terms provided individually; no public wholesale prices',
     'Contact pharmacy privately for complete purchase-order terms. This is nonbinding interest, not a signed agreement.'
   ].join('\n');
-  MailApp.sendEmail({to:'nadeemzialeads@biosciglobal.net',subject:'Ferravitin™ pharmacy order request — '+p.reference,body:txt,name:'BioScience Global Pharmacy Leads'});
+  MailApp.sendEmail({to:'bcpharmacyorders@biosciglobal.net',subject:'Ferravitin™ pharmacy order request — '+p.reference,body:txt,name:'BioScience Global Pharmacy Leads'});
   return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
  }catch(err){
   console.error('Order webhook error: '+err);
