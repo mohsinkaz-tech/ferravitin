@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InternalLeadsRouteImport } from './routes/internal.leads'
 import { Route as ApiOrderRequestRouteImport } from './routes/api.order-request'
+import { Route as ApiInternalLeadsRouteImport } from './routes/api.internal-leads'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -29,9 +31,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InternalLeadsRoute = InternalLeadsRouteImport.update({
+  id: '/internal/leads',
+  path: '/internal/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOrderRequestRoute = ApiOrderRequestRouteImport.update({
   id: '/api/order-request',
   path: '/api/order-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInternalLeadsRoute = ApiInternalLeadsRouteImport.update({
+  id: '/api/internal-leads',
+  path: '/api/internal-leads',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -39,34 +51,61 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/internal-leads': typeof ApiInternalLeadsRoute
   '/api/order-request': typeof ApiOrderRequestRoute
+  '/internal/leads': typeof InternalLeadsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/internal-leads': typeof ApiInternalLeadsRoute
   '/api/order-request': typeof ApiOrderRequestRoute
+  '/internal/leads': typeof InternalLeadsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/internal-leads': typeof ApiInternalLeadsRoute
   '/api/order-request': typeof ApiOrderRequestRoute
+  '/internal/leads': typeof InternalLeadsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/robots.txt' | '/sitemap.xml' | '/api/order-request'
+  fullPaths:
+    | '/'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/api/internal-leads'
+    | '/api/order-request'
+    | '/internal/leads'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/robots.txt' | '/sitemap.xml' | '/api/order-request'
-  id: '__root__' | '/' | '/robots.txt' | '/sitemap.xml' | '/api/order-request'
+  to:
+    | '/'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/api/internal-leads'
+    | '/api/order-request'
+    | '/internal/leads'
+  id:
+    | '__root__'
+    | '/'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/api/internal-leads'
+    | '/api/order-request'
+    | '/internal/leads'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiInternalLeadsRoute: typeof ApiInternalLeadsRoute
   ApiOrderRequestRoute: typeof ApiOrderRequestRoute
+  InternalLeadsRoute: typeof InternalLeadsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,11 +131,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/internal/leads': {
+      id: '/internal/leads'
+      path: '/internal/leads'
+      fullPath: '/internal/leads'
+      preLoaderRoute: typeof InternalLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/order-request': {
       id: '/api/order-request'
       path: '/api/order-request'
       fullPath: '/api/order-request'
       preLoaderRoute: typeof ApiOrderRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal-leads': {
+      id: '/api/internal-leads'
+      path: '/api/internal-leads'
+      fullPath: '/api/internal-leads'
+      preLoaderRoute: typeof ApiInternalLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -106,7 +159,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiInternalLeadsRoute: ApiInternalLeadsRoute,
   ApiOrderRequestRoute: ApiOrderRequestRoute,
+  InternalLeadsRoute: InternalLeadsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

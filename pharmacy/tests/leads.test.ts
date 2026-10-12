@@ -1,0 +1,20 @@
+import {test,expect,mock} from 'bun:test';
+import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const password='a-test-only-32-byte-random-password';
+mock.module('@aws-sdk/client-secrets-manager',()=>({SecretsManagerClient:class{async send(){return {SecretString:JSON.stringify({username:'nadeem',passwordSha256:createHash('sha256').update(password).digest('hex'),bridgeSecret:'x'.repeat(48)})}}},GetSecretValueCommand:class{}}));
+const {authorizeLeadAccess}=await import('../src/lib/lead-access.server');
+function request(value?:string){return new Request('https://test.example/internal/leads',{headers:value?{authorization:'Basic '+Buffer.from(value).toString('base64')}:{}})}
+test('dashboard rejects anonymous and wrong credentials; accepts authorized account',async()=>{expect((await authorizeLeadAccess(request()))?.status).toBe(401);expect((await authorizeLeadAccess(request('nadeem:wrong')))?.status).toBe(401);expect(await authorizeLeadAccess(request('nadeem:'+password))).toBeNull();expect((await authorizeLeadAccess(request('other:'+password)))?.status).toBe(401)});
+function harness(){
+ const rows:unknown[][]=[],mail:any[]=[];let fail=false;
+ const sheet={getLastRow:()=>rows.length,appendRow:(r:unknown[])=>rows.push(r),getRange:(row:number,col:number,n=1,m=1)=>({getValues:()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>rows[row+i-1]?.[col+j-1]??'')),getDisplayValues:()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>String(rows[row+i-1]?.[col+j-1]??''))),getValue:()=>rows[row-1]?.[col-1]??'',getDisplayValue:()=>String(rows[row-1]?.[col-1]??''),setValue:(v:unknown)=>{rows[row-1][col-1]=v},setValues:(v:unknown[][])=>{v.forEach((r,i)=>r.forEach((x,j)=>{rows[row+i-1]??=[];rows[row+i-1][col+j-1]=x}))}})};
+ const ctx:any={Utilities:{getUuid:()=>crypto.randomUUID()},console:{error:()=>{}},PropertiesService:{getScriptProperties:()=>({getProperty:(k:string)=>({SHEET_ID:'test',SHARED_SECRET:'intake',DASHBOARD_SHARED_SECRET:'private'} as any)[k]})},SpreadsheetApp:{openById:()=>({getSheetByName:()=>sheet}),flush:()=>{}},LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},MailApp:{sendEmail:(p:any)=>{if(fail)throw Error('quota');mail.push(p)}},ContentService:{MimeType:{JSON:'json'},createTextOutput:(s:string)=>({setMimeType:()=>JSON.parse(s)})}};
+ vm.createContext(ctx);vm.runInContext(readFileSync('integrations/google-apps-script/Code.gs','utf8'),ctx);
+ return {rows,mail,send:(p:any)=>ctx.doPost({postData:{contents:JSON.stringify(p)}}),fail:(v:boolean)=>{fail=v},retry:()=>ctx.retryPendingEmails()};
+}
+const payload={secret:'intake',reference:'FVP-20261012-ABCDEF12',type:'ferravitin_bc_pharmacy_order_request',consent:true,acknowledge:true,pharmacy:'Test Pharmacy',manager:'Test',email:'test@example.invalid',phone:'123',city:'Test',address:'Test',dm:5,preg:3};
+test('intake persists once and acknowledges nonbinding receipt',()=>{const h=harness();expect(h.send(payload)).toEqual({ok:true,acknowledgement:'sent'});expect(h.rows.length).toBe(2);expect(h.mail.length).toBe(2);expect(h.mail[0].body).toContain('nonbinding');expect(h.mail[0].body).not.toContain('Private follow-up notes');h.send(payload);expect(h.rows.length).toBe(2);expect(h.mail.length).toBe(2)});
+test('mail failure keeps saved row successful and retryable',()=>{const h=harness();h.fail(true);expect(h.send(payload)).toEqual({ok:true,acknowledgement:'pending'});expect(h.rows.length).toBe(2);h.fail(false);h.retry();expect(h.mail.length).toBe(2);expect(h.rows[1][22]).toBe('sent')});
+test('separate dashboard secret, update conflicts and formula protection',()=>{const h=harness();h.send(payload);expect(h.send({action:'listLeads',secret:'intake'}).ok).toBe(false);const j=h.send({action:'listLeads',secret:'private'});expect(j.leads.length).toBe(1);const p={action:'updateLead',secret:'private',reference:payload.reference,status:'Contacted',followUp:'2026-10-13',notes:' =IMPORTXML("x")',version:j.leads[0].version};expect(h.send(p).ok).toBe(true);expect(String(h.rows[1][20]).startsWith("'")).toBe(true);expect(h.send(p).ok).toBe(false)});

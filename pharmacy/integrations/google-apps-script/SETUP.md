@@ -1,16 +1,42 @@
-# Ferravitin™ Google Sheets order leads — production connection
-This integration is NOT active until the Google Apps Script is deployed and both secrets are configured in Higgsfield.
+# Pharmacy acknowledgements and private lead dashboard
 
-1. Create a dedicated Google Sheet using an authorized BSG Google Workspace account, e.g. "Ferravitin BC Founding Pharmacy Leads". Copy its spreadsheet ID from the URL.
-2. At script.google.com create a project and paste Code.gs. Project Settings → Script Properties:
-   - SHEET_ID = the exact spreadsheet ID
-   - SHARED_SECRET = a strong random secret (32+ bytes), generated outside the repo.
-3. Deploy → New deployment → Web app; Execute as: Me; Who has access: Anyone (server-to-server HTTP POST with high-entropy shared secret checked server-side).
-4. Authorize Google Sheets and Mail permissions, record the /exec web app URL.
-5. Higgsfield partner website > Settings > Secrets: configure GOOGLE_ORDER_WEBHOOK_URL (the /exec URL) and GOOGLE_ORDER_SHARED_SECRET (the exact same secret).
-6. Redeploy the partner website, then submit a test order through the site. Verify BOTH: a new row in the "Pharmacy Order Leads" tab AND arrival in nadeemzialeads@biosciglobal.net. Check spam/quarantine if needed.
-7. Revoke previous deployment/secrets when rotating credentials. Use a service-owned mailbox to avoid dependency on an individual's Workspace account.
-8. Site form shows an error (and email fallback) until configured, and it never reports successful delivery without the Apps Script returning {ok:true}.
-9. Security hardening before broad advertising: add server-side rate limiting and bot mitigation (Cloudflare Turnstile/WAF), monitor abuse, use minimum Workspace sharing rights, publish an appropriate privacy notice and retention schedule.
+The production app uses TanStack Start/React/Nitro on AWS Amplify, from `amplify-production`, application root `pharmacy`. Higgsfield website-builder sandbox is the editing environment. Do not use Higgsfield deploy_website for this Amplify branch or re-run the pinned website import workflow.
 
-IMPORTANT: MailApp.sendEmail may be subject to Workspace quotas. Appending the Sheet row happens before sending notification. If MailApp fails, the server may return an error even though the row exists; review the sheet for duplicate references before resubmitting. For stricter delivery guarantees, use a queued notification worker with retry status.
+## Google Apps Script activation (manual, required)
+
+1. Open the **existing** Apps Script project used by the pharmacy intake `/exec` endpoint. Back up its current script and the private Sheet before replacing `Code.gs` with this repository version. Do not create another intake Sheet.
+2. Retain Script Properties `SHEET_ID` and `SHARED_SECRET`; preserve the current AWS intake secret. Never copy secret values into GitHub, chat, screenshots or public frontend settings.
+3. After dashboard credentials are approved/configured, copy `bridgeSecret` privately from AWS Secrets Manager to the Apps Script property `DASHBOARD_SHARED_SECRET`. This is a separate credential from public intake.
+4. Optional `NOTIFICATION_EMAIL` overrides the existing internal notification destination `bcpharmacyorders@biosciglobal.net`. Confirm the mailbox is accessible to Nadeem. Pharmacy acknowledgement is sent to the submitted business email with reply-to `nadeem.zia@biosciglobal.net`.
+5. **Deploy → Manage deployments → Edit existing Web app deployment → New version → Deploy.** Retain Execute as Me / Anyone access. Authentication is verified on every POST before Sheet access. Never add a public doGet data feed. Authorize Sheets and Mail permissions if prompted. Keeping the deployment preserves its `/exec` URL; if changed, update the website's server-side webhook URL and redeploy.
+6. Create one time-driven trigger for `retryPendingEmails`, every 10 minutes. Authorize it. Monitor trigger failures and Workspace mail quotas.
+7. The script retains the original 18 intake columns and appends six pipeline/delivery columns. If columns 19–24 already contain different headers, it refuses to overwrite them: resolve the schema privately before activation. Format Follow-up date column as plain text (YYYY-MM-DD) to avoid locale-dependent date conversion. Keep the Sheet restricted to authorized staff.
+8. Test with a pharmacy email address you control: verify the Sheet row, on-page reference, acknowledgement email and internal notification. Email failure leaves a successful saved receipt with pending delivery. Do not resubmit merely because mail is pending.
+
+Emails acknowledge **nonbinding interest**, not an accepted PO, invoice, payment request, reservation or guaranteed delivery. They contain no wholesale prices, negotiated terms or internal notes. Mail delivery is at-least-once: a crash after sending but before marking sent may duplicate an email. Rows are deduplicated by reference; a new manual submission creates a new reference. Legacy rows are not automatically emailed by the retry trigger.
+
+## Internal credentials (approval/configuration required)
+
+Dashboard: `/internal/leads`. Data/update endpoint: `/api/internal-leads`.
+
+Create AWS Secrets Manager secret **`ferravitin/prod/pharmacy/dashboard-auth`**, region **ca-central-1**, with JSON fields:
+
+- `username`: `nadeem.zia@biosciglobal.net`
+- `passwordSha256`: lowercase SHA-256 hex digest of a **cryptographically random password generated from at least 32 random bytes**. Do not use a human-chosen password with this fast hash.
+- `bridgeSecret`: independently generated random secret, at least 48 random bytes, copied privately to Apps Script `DASHBOARD_SHARED_SECRET`.
+
+Hand the password to Nadeem through a secure private channel/password manager; never put it in this public repository or chat. The application only needs the hash, not the plaintext password. Optional secure-console handoff may store a `password` field temporarily; remove it after handoff.
+
+Extend existing Amplify compute role `FerravitinPharmacyOrderSSR` with an additional permission granting **only** `secretsmanager:GetSecretValue` on the exact ARN of the new dashboard secret. Preserve its current intake-secret permission. Do not grant wildcard secret access. No credential or IAM provisioning was completed by this change: automatic approval review rejected that operation pending explicit approval.
+
+Authentication uses HTTPS browser Basic authentication with a high-entropy individual credential, validated server-side with constant-time digest comparison. Both the HTML and every API request are checked. Updates require same-origin JSON requests. There is no anonymous lead feed, public dashboard link or client-side secret. Missing/invalid configuration fails closed. HTML/API responses are private/no-store and noindex; API data is loaded after authentication and is not embedded into public SSR HTML. On shared devices use a private browser window and close it after use; Basic credentials remain cached for the browser session. Rotate the password after suspected exposure. Secret caching lasts up to 60 seconds.
+
+This initial dashboard does not include SSO/MFA or a persistent audit log. Use a managed MFA identity provider for a future multi-user rollout. Keep private terms in the restricted Sheet/private correspondence; they are never added to public MSRP content.
+
+## Validation and rollout
+
+Run `bun test tests/leads.test.ts`, then `bun run build` from `pharmacy/`. GitHub CI runs these tests on pharmacy changes. Nitro builds the AWS SDK into SSR compute rather than assuming it exists in the hosting runtime. Test anonymous and incorrect-password requests to both internal URLs: neither must return dashboard HTML or lead data. Check private cache headers and origin rejection on writes.
+
+After activating Apps Script and credentials, sign in as Nadeem, confirm counts, edit status/notes/follow-up, reload and verify persistence in the Sheet. A concurrent edit must require refresh instead of silently overwriting another update. Verify a controlled live submission end-to-end, including both mailboxes. The live acknowledgement and authenticated Sheet operations cannot be confirmed until these manual steps are complete.
+
+Rollback: revert the code commit through GitHub and let Amplify rebuild; restore the previous Apps Script deployment version if needed. Preserve all Sheet rows and added pipeline data. Do not remove the existing intake secret.

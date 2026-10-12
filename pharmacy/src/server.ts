@@ -1,3 +1,4 @@
+import {authorizeLeadAccess,privateHeaders} from './lib/lead-access.server';
 import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
@@ -40,9 +41,14 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const pathname=new URL(request.url).pathname;
+      const internal=pathname==='/internal' || pathname.startsWith('/internal/') || pathname==='/api/internal-leads';
+      if(internal){const denied=await authorizeLeadAccess(request);if(denied)return denied;}
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized=await normalizeCatastrophicSsrResponse(response);
+      if(internal){const headers=new Headers(normalized.headers);for(const [k,v] of Object.entries(privateHeaders))headers.set(k,v);return new Response(normalized.body,{status:normalized.status,headers});}
+      return normalized;
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

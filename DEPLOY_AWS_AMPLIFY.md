@@ -1,3 +1,7 @@
+## 2026-10-12 pharmacy workflow extension
+
+The pharmacy app now includes automatic nonbinding acknowledgement delivery tracking and the authenticated `/internal/leads` dashboard. See `pharmacy/integrations/google-apps-script/SETUP.md` for required **manual Apps Script version redeployment**, retry trigger, dashboard secret and scoped compute-role permission. Code deployment alone does not activate the new Google workflow. Internal access fails closed until credentials exist. The AWS Secrets Manager SDK is explicitly bundled into Nitro compute. Public MSRP and private commercial terms remain separate.
+
 # BioScience Global — AWS Amplify production deployment
 
 **Status:** Two fully exported, Amplify SSR-compatible websites are on the `amplify-production` branch. Both compile locally to `.amplify-hosting` with Node.js 22 compute. The existing Higgsfield sites remain unchanged and active. No AWS account deployment or Namecheap DNS modifications have been performed.

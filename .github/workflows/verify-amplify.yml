@@ -33,6 +33,9 @@ jobs:
           bun-version: '1.4.3'
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
+      - name: Verify pharmacy lead access and intake workflow
+        if: matrix.site == 'pharmacy'
+        run: bun test tests/leads.test.ts
       - name: Validate TypeScript and build Amplify SSR bundle
         run: bun run build
       - name: Inspect Amplify compute manifest
