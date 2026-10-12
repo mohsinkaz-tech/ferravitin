@@ -14,7 +14,7 @@ const url=process.env.GOOGLE_ORDER_WEBHOOK_URL;
 const secret=process.env.GOOGLE_ORDER_SHARED_SECRET;
 if(!url||!secret)return reply({error:'The Google Sheets order intake is not yet connected. Please contact nadeem.zia@biosciglobal.net.'},503);
 const reference='FVP-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+crypto.randomUUID().slice(0,8).toUpperCase();
-const payload={type:'ferravitin_bc_pharmacy_order_request',secret,reference,pharmacy,manager,email,phone,address,city,gst,dm,preg,estimatedCAD:Number((dm*50.99+preg*59.49).toFixed(2)),notes,consent:true,acknowledge:true,receivedAt:new Date().toISOString(),poTemplate:'BSG-PO-T001 v1.3',origin:'ferravitin-bc-pharmacy-partner'};
+const payload={type:'ferravitin_bc_pharmacy_order_request',secret,reference,pharmacy,manager,email,phone,address,city,gst,dm,preg,msrpReferenceCAD:Number((dm*59.99+preg*69.99).toFixed(2)),notes,consent:true,acknowledge:true,receivedAt:new Date().toISOString(),poTemplate:'Private purchase-order terms provided on request',origin:'ferravitin-bc-pharmacy-partner'};
 try{
 const target=new URL(url);
 if(target.protocol!=='https:'||!['script.google.com','script.googleusercontent.com'].includes(target.hostname))throw Error('Invalid webhook');
