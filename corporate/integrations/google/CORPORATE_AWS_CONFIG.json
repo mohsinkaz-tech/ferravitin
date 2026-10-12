@@ -6,5 +6,6 @@
   "secretName":"ferravitin/prod/corporate/contact",
   "secretSchema":{"webhookUrl":"Apps Script deployed /exec URL","sharedSecret":"Private random secret, at least 32 characters"},
   "assumeRolePolicyDocument":{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"amplify.amazonaws.com"},"Action":"sts:AssumeRole","Condition":{"StringEquals":{"aws:SourceAccount":"388289205832"},"ArnLike":{"aws:SourceArn":"arn:aws:amplify:ca-central-1:388289205832:apps/d3l733upn467ky*"}}}]},
-  "permissionsPolicyDocument":{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["secretsmanager:GetSecretValue"],"Resource":["arn:aws:secretsmanager:ca-central-1:388289205832:secret:ferravitin/prod/corporate/contact-mf8LZz"]}]}
+  "adminSecretName":"ferravitin/prod/corporate/marketing-admin",
+  "permissionsPolicyDocument":{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["secretsmanager:GetSecretValue"],"Resource":["arn:aws:secretsmanager:ca-central-1:388289205832:secret:ferravitin/prod/corporate/contact-mf8LZz","arn:aws:secretsmanager:ca-central-1:388289205832:secret:ferravitin/prod/corporate/marketing-admin-BJOIkU"]}]}
 }

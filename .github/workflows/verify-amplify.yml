@@ -38,7 +38,7 @@ jobs:
         run: bun test tests/leads.test.ts
       - name: Verify corporate contact delivery and Google bridge
         if: matrix.site == 'corporate'
-        run: bun test tests/contact.test.ts
+        run: bun test tests/contact.test.ts tests/marketing.test.ts
       - name: Validate TypeScript and build Amplify SSR bundle
         run: bun run build
       - name: Inspect Amplify compute manifest

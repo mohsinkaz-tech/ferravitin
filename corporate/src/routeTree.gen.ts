@@ -14,7 +14,10 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as PageRouteImport } from './routes/$page'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InternalMarketingRouteImport } from './routes/internal.marketing'
 import { Route as InsightsPeptidesAndIronRouteImport } from './routes/insights.peptides-and-iron'
+import { Route as ApiMarketingSessionRouteImport } from './routes/api.marketing-session'
+import { Route as ApiMarketingLeadsRouteImport } from './routes/api.marketing-leads'
 import { Route as ApiLeadRouteImport } from './routes/api.lead'
 import { Route as ApiBlogRouteImport } from './routes/api.blog'
 
@@ -43,9 +46,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InternalMarketingRoute = InternalMarketingRouteImport.update({
+  id: '/internal/marketing',
+  path: '/internal/marketing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InsightsPeptidesAndIronRoute = InsightsPeptidesAndIronRouteImport.update({
   id: '/insights/peptides-and-iron',
   path: '/insights/peptides-and-iron',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMarketingSessionRoute = ApiMarketingSessionRouteImport.update({
+  id: '/api/marketing-session',
+  path: '/api/marketing-session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMarketingLeadsRoute = ApiMarketingLeadsRouteImport.update({
+  id: '/api/marketing-leads',
+  path: '/api/marketing-leads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiLeadRoute = ApiLeadRouteImport.update({
@@ -67,7 +85,10 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/blog': typeof ApiBlogRoute
   '/api/lead': typeof ApiLeadRoute
+  '/api/marketing-leads': typeof ApiMarketingLeadsRoute
+  '/api/marketing-session': typeof ApiMarketingSessionRoute
   '/insights/peptides-and-iron': typeof InsightsPeptidesAndIronRoute
+  '/internal/marketing': typeof InternalMarketingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,7 +98,10 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/blog': typeof ApiBlogRoute
   '/api/lead': typeof ApiLeadRoute
+  '/api/marketing-leads': typeof ApiMarketingLeadsRoute
+  '/api/marketing-session': typeof ApiMarketingSessionRoute
   '/insights/peptides-and-iron': typeof InsightsPeptidesAndIronRoute
+  '/internal/marketing': typeof InternalMarketingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,7 +112,10 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/blog': typeof ApiBlogRoute
   '/api/lead': typeof ApiLeadRoute
+  '/api/marketing-leads': typeof ApiMarketingLeadsRoute
+  '/api/marketing-session': typeof ApiMarketingSessionRoute
   '/insights/peptides-and-iron': typeof InsightsPeptidesAndIronRoute
+  '/internal/marketing': typeof InternalMarketingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,7 +127,10 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/api/blog'
     | '/api/lead'
+    | '/api/marketing-leads'
+    | '/api/marketing-session'
     | '/insights/peptides-and-iron'
+    | '/internal/marketing'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -110,7 +140,10 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/api/blog'
     | '/api/lead'
+    | '/api/marketing-leads'
+    | '/api/marketing-session'
     | '/insights/peptides-and-iron'
+    | '/internal/marketing'
   id:
     | '__root__'
     | '/'
@@ -120,7 +153,10 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/api/blog'
     | '/api/lead'
+    | '/api/marketing-leads'
+    | '/api/marketing-session'
     | '/insights/peptides-and-iron'
+    | '/internal/marketing'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -131,7 +167,10 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiBlogRoute: typeof ApiBlogRoute
   ApiLeadRoute: typeof ApiLeadRoute
+  ApiMarketingLeadsRoute: typeof ApiMarketingLeadsRoute
+  ApiMarketingSessionRoute: typeof ApiMarketingSessionRoute
   InsightsPeptidesAndIronRoute: typeof InsightsPeptidesAndIronRoute
+  InternalMarketingRoute: typeof InternalMarketingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -171,11 +210,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/internal/marketing': {
+      id: '/internal/marketing'
+      path: '/internal/marketing'
+      fullPath: '/internal/marketing'
+      preLoaderRoute: typeof InternalMarketingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/insights/peptides-and-iron': {
       id: '/insights/peptides-and-iron'
       path: '/insights/peptides-and-iron'
       fullPath: '/insights/peptides-and-iron'
       preLoaderRoute: typeof InsightsPeptidesAndIronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/marketing-session': {
+      id: '/api/marketing-session'
+      path: '/api/marketing-session'
+      fullPath: '/api/marketing-session'
+      preLoaderRoute: typeof ApiMarketingSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/marketing-leads': {
+      id: '/api/marketing-leads'
+      path: '/api/marketing-leads'
+      fullPath: '/api/marketing-leads'
+      preLoaderRoute: typeof ApiMarketingLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/lead': {
@@ -203,7 +263,10 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiBlogRoute: ApiBlogRoute,
   ApiLeadRoute: ApiLeadRoute,
+  ApiMarketingLeadsRoute: ApiMarketingLeadsRoute,
+  ApiMarketingSessionRoute: ApiMarketingSessionRoute,
   InsightsPeptidesAndIronRoute: InsightsPeptidesAndIronRoute,
+  InternalMarketingRoute: InternalMarketingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

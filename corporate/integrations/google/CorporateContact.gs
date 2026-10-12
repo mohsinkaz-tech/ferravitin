@@ -3,14 +3,18 @@
  */
 const CONTACT_HEADERS=['Timestamp','Name','Organization','Email','Region','Interest','Message','Consent','Submission ID','Payload hash','Notification status','Notified at'];
 const CONTACT_INTERESTS=['Pharmacy partnership','Practitioner enquiry','Retail and distribution','Research collaboration','General corporate enquiry'];
+const MARKETING_HEADERS=['Lead status','Assigned owner','Follow-up date','Private notes','Updated at','Version','Updated by'];
 function setupCorporateContact(){
   const properties=PropertiesService.getScriptProperties();
   if(!properties.getProperty('SPREADSHEET_ID'))properties.setProperty('SPREADSHEET_ID',SpreadsheetApp.getActive().getId());
   const sheet=contactSheet_();
   if(sheet.getLastRow()===0)sheet.appendRow(CONTACT_HEADERS);
   assertContactHeaders_(sheet);
+  const existing=sheet.getRange(1,13,1,7).getValues()[0];
+  if(existing.some(v=>v!==''&&v!==null)&&JSON.stringify(existing)!==JSON.stringify(MARKETING_HEADERS))throw Error('Unexpected dashboard columns');
+  sheet.getRange(1,13,1,7).setValues([MARKETING_HEADERS]);
   sheet.setFrozenRows(1);
-  sheet.getRange(1,1,1,CONTACT_HEADERS.length).setFontWeight('bold').setBackground('#eeeeee');
+  sheet.getRange(1,1,1,CONTACT_HEADERS.length+MARKETING_HEADERS.length).setFontWeight('bold').setBackground('#eeeeee');
   // Authorizes email without sending a message.
   MailApp.getRemainingDailyQuota();
   if(!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='retryContactNotifications'))ScriptApp.newTrigger('retryContactNotifications').timeBased().everyMinutes(5).create();
@@ -41,6 +45,7 @@ function doPost(e){
   try{
     if(!e||!e.postData||e.postData.contents.length>16000)return contactOutput_({ok:false});
     const p=JSON.parse(e.postData.contents),expected=PropertiesService.getScriptProperties().getProperty('WEBHOOK_SHARED_SECRET');
+    if(p&&p.type==='corporate-dashboard-v1')return corporateDashboard_(p);
     if(!expected||expected.length<32||p.secret!==expected)return contactOutput_({ok:false});
     const lead=validateCorporateLead_(p),hash=contactHash_(lead);
     lock=LockService.getScriptLock();lock.waitLock(5000);
@@ -80,3 +85,32 @@ function retryContactNotifications(){
 }
 function doGet(){return contactOutput_({ok:false});}
 function contactOutput_(value){return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);}
+function corporateDashboard_(p){
+  const expected=PropertiesService.getScriptProperties().getProperty('DASHBOARD_SHARED_SECRET');
+  if(!expected||expected.length<40||p.secret!==expected)return contactOutput_({ok:false});
+  const lock=LockService.getScriptLock();let locked=false;
+  try{
+    lock.waitLock(5000);locked=true;
+    const sheet=contactSheet_();assertContactHeaders_(sheet);
+    if(JSON.stringify(sheet.getRange(1,13,1,7).getValues()[0])!==JSON.stringify(MARKETING_HEADERS))return contactOutput_({ok:false,code:'SETUP_REQUIRED'});
+    const rows=sheet.getLastRow()>1?sheet.getRange(2,1,sheet.getLastRow()-1,19).getValues():[];
+    if(p.action==='list'){
+      if(!Number.isInteger(p.cursor)||p.cursor<0)return contactOutput_({ok:false});
+      const end=p.cursor===0?rows.length:Math.min(p.cursor,rows.length),start=Math.max(0,end-100);
+      return contactOutput_({ok:true,leads:rows.slice(start,end).reverse().map(marketingLead_),total:rows.length,nextCursor:start>0?start:null});
+    }
+    const statuses=['New','Contacted','Qualified','Proposal sent','Won','Closed'];
+    if(p.action!=='update'||typeof p.id!=='string'||! /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(p.id)||typeof p.version!=='string'||! /^(0|[0-9a-f-]{36})$/i.test(p.version)||!statuses.includes(p.status)||typeof p.actor!=='string'||!p.actor||p.actor.length>120)return contactOutput_({ok:false});
+    for(const [k,max] of [['owner',120],['notes',2000],['followUp',10]])if(typeof p[k]!=='string'||p[k].length>max||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(p[k]))return contactOutput_({ok:false});
+    if(p.followUp!==''&&(!/^\d{4}-\d{2}-\d{2}$/.test(p.followUp)||isNaN(new Date(p.followUp+'T00:00:00Z').getTime())||new Date(p.followUp+'T00:00:00Z').toISOString().slice(0,10)!==p.followUp))return contactOutput_({ok:false});
+    const index=rows.findIndex(r=>r[8]===p.id);if(index<0||String(rows[index][17]||'0')!==p.version)return contactOutput_({ok:false,code:'CONFLICT'});
+    const values=[p.status,p.owner.trim(),p.followUp,p.notes.trim(),new Date(),Utilities.getUuid(),p.actor].map(v=>v instanceof Date?v:sheetText_(v));
+    sheet.getRange(index+2,13,1,7).setValues([values]);SpreadsheetApp.flush();
+    return contactOutput_({ok:true,lead:marketingLead_(rows[index].slice(0,12).concat(values))});
+  }catch{return contactOutput_({ok:false});}finally{if(locked)lock.releaseLock();}
+}
+function marketingLead_(r){
+  const text=v=>String(v||'').replace(/^'(?=[\s]*[=+@\-])/,'');
+  const iso=v=>v instanceof Date&&!isNaN(v.getTime())?v.toISOString():'';
+  return {id:text(r[8]),receivedAt:iso(r[0]),name:text(r[1]),organization:text(r[2]),email:text(r[3]),region:text(r[4]),interest:text(r[5]),message:text(r[6]),notification:text(r[10]),status:text(r[12])||'New',owner:text(r[13]),followUp:r[14] instanceof Date?Utilities.formatDate(r[14],'America/Vancouver','yyyy-MM-dd'):text(r[14]),notes:text(r[15]),updatedAt:iso(r[16]),version:text(r[17])||'0',updatedBy:text(r[18])};
+}
