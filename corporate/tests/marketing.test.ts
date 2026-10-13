@@ -25,6 +25,12 @@ test('private reads never call the bridge without a valid session',async()=>{
   const denied=await handleMarketingLeads(request('/api/marketing-leads'),deps);expect(denied.status).toBe(401);expect(calls).toBe(0);expect(denied.headers.get('cache-control')).toContain('no-store');
   expect((await handleMarketingLeads(request('/api/marketing-leads',undefined,cookie()),deps)).status).toBe(200);expect(calls).toBe(1);
 });
+test('authenticated diagnostics distinguish configuration, deployment and bridge errors without leaking credentials',async()=>{
+  for(const code of ['CONTACT_CONFIG','CONFIG','GOOGLE_TIMEOUT','GOOGLE_HTTP','GOOGLE_DEPLOYMENT','GOOGLE_AUTH_OR_VERSION','SETUP_REQUIRED','BRIDGE']){
+    const response=await handleMarketingLeads(request('/api/marketing-leads',undefined,cookie()),{load:async()=>config,bridge:async()=>{throw Error(code);}});
+    expect(response.status).toBe(503);const data=await response.json();expect(data.code).toBe(code);expect(data.error).not.toContain(config.dashboardBridgeSecret);expect(data.error).not.toContain(config.sessionSecret);
+  }
+});
 test('updates validate dates, field limits and origin and report edit conflicts',async()=>{
   const update={id:randomUUID(),version:'0',status:'Qualified',owner:'Admin',followUp:'2026-10-13',notes:'Call next week'};
   for(const change of [{followUp:'2026-02-30'},{status:'Bad'},{notes:'x'.repeat(2001)},{version:'invalid'}])expect(()=>validateLeadUpdate({...update,...change})).toThrow();

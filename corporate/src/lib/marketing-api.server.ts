@@ -17,11 +17,24 @@ export async function handleAdminSession(request:Request,load=adminConfig){
   }catch{return adminJson({error:'Admin access is not configured yet.'},503);}
 }
 export async function marketingBridge(action:string,fields:Record<string,unknown>,config:AdminConfig){
-  const contact=await contactConfig(),url=new URL(contact.webhookUrl);
+  let contact;try{contact=await contactConfig();}catch{throw Error('CONTACT_CONFIG');}
+  let url;try{url=new URL(contact.webhookUrl);}catch{throw Error('CONFIG');}
   if(url.origin!=='https://script.google.com'||!/^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url.pathname)||url.search||url.username||url.password)throw Error('CONFIG');
-  const response=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...fields,type:'corporate-dashboard-v1',action,secret:config.dashboardBridgeSecret,actor:config.username}),signal:AbortSignal.timeout(20000)});
-  const result=await response.json();if(!response.ok||!result.ok){if(result.code==='CONFLICT')throw Error('CONFLICT');throw Error('BRIDGE');}return result;
+  let response;try{response=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...fields,type:'corporate-dashboard-v1',action,secret:config.dashboardBridgeSecret,actor:config.username}),signal:AbortSignal.timeout(20000)});}catch{throw Error('GOOGLE_TIMEOUT');}
+  if(!response.ok)throw Error('GOOGLE_HTTP');
+  let result;try{result=await response.json();}catch{throw Error('GOOGLE_DEPLOYMENT');}
+  if(!result.ok){if(result.code==='CONFLICT')throw Error('CONFLICT');if(result.code==='SETUP_REQUIRED')throw Error('SETUP_REQUIRED');throw Error('GOOGLE_AUTH_OR_VERSION');}return result;
 }
+export const marketingConnectionErrors:Record<string,string>={
+  CONTACT_CONFIG:'The corporate contact configuration is incomplete or unreadable. Check webhookUrl and sharedSecret in the AWS corporate contact secret.',
+  CONFIG:'The configured Google URL is invalid. Use the deployed script.google.com Web app URL ending in /exec, without query parameters.',
+  GOOGLE_TIMEOUT:'Google did not respond in time. Retry, then check Apps Script Executions for failures.',
+  GOOGLE_HTTP:'Google rejected the web-app request. Check that the deployment executes as Me and allows Anyone.',
+  GOOGLE_DEPLOYMENT:'Google returned a sign-in or HTML page instead of the bridge response. Check the /exec URL and web-app access settings.',
+  GOOGLE_AUTH_OR_VERSION:'Google did not accept the dashboard request. Check DASHBOARD_SHARED_SECRET matches the AWS dashboardBridgeSecret, and deploy the latest CorporateContact.gs version.',
+  SETUP_REQUIRED:'The deployed Google script could not find the dashboard columns. Run setupCorporateContact in the corporate Sheet project, then deploy the latest version.',
+  BRIDGE:'Google returned an unexpected lead response. Verify webhookUrl points to the corporate deployment and deploy the latest CorporateContact.gs version.'
+};
 export async function handleMarketingLeads(request:Request,dependencies={load:adminConfig,bridge:marketingBridge}){
   const access=await authorizeAdmin(request,dependencies.load);if(access.denied)return access.denied;
   try{
@@ -33,5 +46,5 @@ export async function handleMarketingLeads(request:Request,dependencies={load:ad
     let data;try{data=await adminBody(request);}catch(error){return adminJson({error:'Invalid update request.'},(error as Error).message==='ORIGIN'?403:400);}
     let update;try{update=validateLeadUpdate(data);}catch{return adminJson({error:'Check the status, date, owner and note length.'},400);}
     return adminJson(await dependencies.bridge('update',update,access.config!));
-  }catch(error){return adminJson({error:(error as Error).message==='CONFLICT'?'This lead changed since you opened it. Refresh and review before saving again.':'The corporate lead connection is unavailable. Check Google activation and dashboard configuration.'},(error as Error).message==='CONFLICT'?409:503);}
+  }catch(error){const code=(error as Error).message;return adminJson({error:code==='CONFLICT'?'This lead changed since you opened it. Refresh and review before saving again.':marketingConnectionErrors[code]||'The corporate lead connection is unavailable. Check Google activation and dashboard configuration.',code:code in marketingConnectionErrors?code:code==='CONFLICT'?'CONFLICT':'UNAVAILABLE'},code==='CONFLICT'?409:503);}
 }
