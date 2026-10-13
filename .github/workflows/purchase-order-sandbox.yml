@@ -1,0 +1,29 @@
+name: Validate purchase order sandbox foundation
+on:
+  pull_request:
+    branches: [amplify-production]
+  push:
+    branches: [purchase-order-sandbox]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: corporate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: bun install --frozen-lockfile
+      - run: node --experimental-strip-types --test tests/purchase-orders.test.mjs
+      - run: bun test tests/contact.test.ts tests/marketing.test.ts
+      - run: bun run build
+      - name: Require Amplify SSR artifact
+        run: test -f .amplify-hosting/deploy-manifest.json
