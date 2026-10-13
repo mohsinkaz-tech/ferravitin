@@ -1,5 +1,20 @@
 version: 1
 applications:
+  - appRoot: corporate
+    frontend:
+      buildPath: /
+      phases:
+        preBuild:
+          commands:
+            - nvm use 22
+        build:
+          commands:
+            - node --check appeal/campaign.js
+            - cd appeal && node build.mjs
+      artifacts:
+        baseDirectory: appeal/dist
+        files:
+          - '**/*'
   - appRoot: appeal
     frontend:
       phases:
@@ -14,4 +29,3 @@ applications:
         baseDirectory: dist
         files:
           - '**/*'
-
