@@ -6,6 +6,8 @@ let cached:{value:AdminConfig;expires:number}|undefined;
 export const adminHeaders={'Cache-Control':'private, no-store, max-age=0','X-Robots-Tag':'noindex, nofollow, noarchive','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff'};
 export const adminJson=(value:unknown,status=200,extra:Record<string,string>={})=>new Response(JSON.stringify(value),{status,headers:{...adminHeaders,'Content-Type':'application/json',...extra}});
 export async function adminConfig():Promise<AdminConfig>{
+  // Do not load production dashboard credentials into the purchase-order preview.
+  if(process.env.PURCHASE_ORDER_MODE==='simulation')throw Error('Marketing access disabled in purchase-order simulation');
   if(cached&&cached.expires>Date.now())return cached.value;
   // Local test credentials may be supplied privately; never use a VITE_ variable.
   const raw=process.env.CORPORATE_ADMIN_CONFIG|| (await client.send(new GetSecretValueCommand({SecretId:'ferravitin/prod/corporate/marketing-admin'}),{abortSignal:AbortSignal.timeout(5000)})).SecretString;

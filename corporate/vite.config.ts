@@ -9,7 +9,12 @@ import svgr from "vite-plugin-svgr";
 const iconsShim = fileURLToPath(new URL("./src/lib/quanta-icons.ts", import.meta.url));
 
 export default defineConfig({
-  define: { __HF_DESIGN_INSPECTOR__: false },
+  define: {
+    __HF_DESIGN_INSPECTOR__: false,
+    // Amplify build variables are not automatically SSR runtime variables.
+    // Bake this nonsecret safety marker into the preview bundle; never bake credentials.
+    'process.env.PURCHASE_ORDER_MODE': JSON.stringify(process.env.PURCHASE_ORDER_MODE || 'disabled'),
+  },
   resolve: {
     alias: [{find: /^@higgsfield-ai\/icons(\/.*)?$/, replacement: iconsShim}],
   },
