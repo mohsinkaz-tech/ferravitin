@@ -1,0 +1,256 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Shajara community appeal interest registration. No payment collection.",
+  "Resources": {
+    "Interests": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "id",
+            "KeyType": "HASH"
+          }
+        ],
+        "SSESpecification": {
+          "SSEEnabled": true
+        },
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true
+        },
+        "TimeToLiveSpecification": {
+          "AttributeName": "expires_at",
+          "Enabled": true
+        }
+      }
+    },
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "RegisterOnly",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:PutItem"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "Interests",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-register:*"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Function": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": {
+          "Fn::Sub": "${AWS::StackName}-register"
+        },
+        "Runtime": "python3.13",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "Timeout": 10,
+        "MemorySize": 128,
+        "Code": {
+          "ZipFile": "import os,json,re,uuid,hashlib,base64,time\nfrom datetime import datetime,timezone\nimport boto3\nfrom botocore.exceptions import ClientError\ntable=boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])\norigin=os.environ['ALLOWED_ORIGIN']\ndef reply(code,data):\n    return {'statusCode':code,'headers':{'Content-Type':'application/json','Cache-Control':'no-store'},'body':json.dumps(data)}\ndef handler(event,context):\n    headers=event.get('headers') or {}\n    if headers.get('origin')!=origin:\n        return reply(403,{'error':'Please register using the campaign page.'})\n    raw=event.get('body') or ''\n    if event.get('isBase64Encoded'):\n        try: raw=base64.b64decode(raw).decode('utf-8')\n        except (ValueError,UnicodeError): return reply(400,{'error':'Invalid request.'})\n    if len(raw)>4096: return reply(413,{'error':'Request too large.'})\n    try: body=json.loads(raw)\n    except (ValueError,TypeError): return reply(400,{'error':'Invalid request.'})\n    if not isinstance(body,dict): return reply(400,{'error':'Invalid request.'})\n    name=body.get('name');email=body.get('email');phone=body.get('phone','');amount=body.get('amount')\n    if not isinstance(name,str) or not isinstance(email,str) or not isinstance(phone,str):\n        return reply(400,{'error':'Please enter valid contact details.'})\n    name=name.strip();email=email.strip().lower();phone=phone.strip()\n    if body.get('website'): return reply(400,{'error':'Unable to register.'})\n    if not 2<=len(name)<=120 or not re.fullmatch(r'[^\\s@]+@[^\\s@]+\\.[^\\s@]+',email) or len(email)>180 or len(phone)>45 or type(amount) is not int or amount not in [500,750,1000] or body.get('consent') is not True:\n        return reply(400,{'error':'Please enter valid details, select a contribution and agree to be contacted.'})\n    try: uuid.UUID(body.get('requestId',''))\n    except (ValueError,TypeError,AttributeError): return reply(400,{'error':'Please reload the page and try again.'})\n    key=hashlib.sha256(('shajara-ten-partners:'+email).encode()).hexdigest()\n    item={'id':key,'name':name,'email':email,'phone':phone,'amount':amount,'consent':True,'consentVersion':'2026-10-13','created_at':datetime.now(timezone.utc).isoformat(),'expires_at':int(time.time())+365*86400,'campaign':'shajara-ten-partners'}\n    try:\n        table.put_item(Item=item,ConditionExpression='attribute_not_exists(id)')\n    except table.meta.client.exceptions.ConditionalCheckFailedException:\n        return reply(200,{'ok':True,'message':'Your interest has already been registered.'})\n    except ClientError:\n        return reply(503,{'error':'Registration is temporarily unavailable. Please try again later.'})\n    return reply(200,{'ok':True})\n"
+        },
+        "Environment": {
+          "Variables": {
+            "TABLE_NAME": {
+              "Ref": "Interests"
+            },
+            "ALLOWED_ORIGIN": "https://shajara-appeal.d3l733upn467ky.amplifyapp.com"
+          }
+        }
+      }
+    },
+    "FunctionLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Sub": "/aws/lambda/${AWS::StackName}-register"
+        },
+        "RetentionInDays": 14
+      }
+    },
+    "ApiLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": 14
+      }
+    },
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-api"
+        },
+        "ProtocolType": "HTTP",
+        "CorsConfiguration": {
+          "AllowOrigins": [
+            "https://shajara-appeal.d3l733upn467ky.amplifyapp.com"
+          ],
+          "AllowHeaders": [
+            "content-type"
+          ],
+          "AllowMethods": [
+            "POST",
+            "OPTIONS"
+          ],
+          "MaxAge": 300
+        }
+      }
+    },
+    "Integration": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "Function",
+            "Arn"
+          ]
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 15000
+      }
+    },
+    "Route": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "RouteKey": "POST /register",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "Integration"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "Stage": {
+      "Type": "AWS::ApiGatewayV2::Stage",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "StageName": "$default",
+        "AutoDeploy": true,
+        "DefaultRouteSettings": {
+          "ThrottlingBurstLimit": 10,
+          "ThrottlingRateLimit": 2
+        },
+        "AccessLogSettings": {
+          "DestinationArn": {
+            "Fn::GetAtt": [
+              "ApiLogs",
+              "Arn"
+            ]
+          },
+          "Format": "{\"requestId\":\"$context.requestId\",\"status\":\"$context.status\",\"routeKey\":\"$context.routeKey\"}"
+        }
+      }
+    },
+    "Permission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "Function"
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/POST/register"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "RegistrationEndpoint": {
+      "Description": "Write-only public registration endpoint",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            {
+              "Fn::GetAtt": [
+                "Api",
+                "ApiEndpoint"
+              ]
+            },
+            "/register"
+          ]
+        ]
+      }
+    },
+    "TableName": {
+      "Description": "Private interest records",
+      "Value": {
+        "Ref": "Interests"
+      }
+    },
+    "FunctionName": {
+      "Description": "Registration handler",
+      "Value": {
+        "Ref": "Function"
+      }
+    }
+  }
+}
+

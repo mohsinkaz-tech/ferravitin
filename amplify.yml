@@ -1,38 +1,17 @@
 version: 1
 applications:
-  - appRoot: corporate
+  - appRoot: appeal
     frontend:
       phases:
         preBuild:
           commands:
             - nvm use 22
-            - npm install --global bun@1.4.3
-            - bun install --frozen-lockfile
         build:
           commands:
-            - bun run build
+            - node --check campaign.js
+            - node build.mjs
       artifacts:
-        baseDirectory: .amplify-hosting
+        baseDirectory: dist
         files:
           - '**/*'
-      cache:
-        paths:
-          - node_modules/**/*
-  - appRoot: pharmacy
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - nvm use 22
-            - npm install --global bun@1.4.3
-            - bun install --frozen-lockfile
-        build:
-          commands:
-            - bun run build
-      artifacts:
-        baseDirectory: .amplify-hosting
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - node_modules/**/*
+
