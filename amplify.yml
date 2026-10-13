@@ -12,7 +12,7 @@ applications:
             - node --check appeal/campaign.js
             - cd appeal && node build.mjs
       artifacts:
-        baseDirectory: appeal/dist
+        baseDirectory: appeal/.amplify-hosting
         files:
           - '**/*'
   - appRoot: appeal
@@ -26,6 +26,6 @@ applications:
             - node --check campaign.js
             - node build.mjs
       artifacts:
-        baseDirectory: dist
+        baseDirectory: .amplify-hosting
         files:
           - '**/*'
