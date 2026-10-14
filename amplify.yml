@@ -9,23 +9,9 @@ applications:
             - nvm use 22
         build:
           commands:
-            - node --check appeal/campaign.js
-            - cd appeal && node build.mjs
+            - node --check shajara/site/site.js
+            - cd shajara && node build.mjs
       artifacts:
-        baseDirectory: appeal/.amplify-hosting
-        files:
-          - '**/*'
-  - appRoot: appeal
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - nvm use 22
-        build:
-          commands:
-            - node --check campaign.js
-            - node build.mjs
-      artifacts:
-        baseDirectory: .amplify-hosting
+        baseDirectory: shajara/.amplify-hosting
         files:
           - '**/*'
