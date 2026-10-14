@@ -1,6 +1,6 @@
-const pageUrl='https://shajara-appeal.d3l733upn467ky.amplifyapp.com/share.html';
+const pageUrl='https://justgiving.shajara.ca/';
 const message='Assalamu alaikum, dear friends. I’m raising funds to support Shaukat Khanum through CERF. Every amount is welcome. Please watch my personal message and share it with one person. May Allah accept our giving. Ameen.\n\nWatch and share: '+pageUrl+'\nDonate: https://www.justgiving.com/page/mohsin-kazi-1';
 document.getElementById('whatsapp').href='https://wa.me/?text='+encodeURIComponent(message);
 document.getElementById('email').href='mailto:?subject='+encodeURIComponent('A personal invitation to give — Mohsin Kazi')+'&body='+encodeURIComponent(message);
-document.getElementById('sms').href='sms:?body='+encodeURIComponent(message);
+document.getElementById('sms').href='sms:'+(/iPad|iPhone|iPod/.test(navigator.userAgent)?'&':'?')+'body='+encodeURIComponent(message);
 document.getElementById('copy').addEventListener('click',async()=>{const status=document.getElementById('status');try{await navigator.clipboard.writeText(pageUrl);status.textContent='Link copied. Thank you for sharing.';}catch{status.textContent='Copy this link: '+pageUrl;}});
